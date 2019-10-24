@@ -64,6 +64,7 @@
   onMount(async () => {
     if (netlifyClient.accessToken) {
       sites = await fetchSites();
+      startUpdateTimer();
     }
   });
 
