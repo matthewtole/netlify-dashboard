@@ -23,13 +23,15 @@
       placeholder="Paste a Netlify API token"
       class="w-full p-4 rounded" />
     <button
-      class="bg-green-600 text-white p-2 w-1/4 my-2 rounded"
+      class="bg-success text-white p-2 w-1/4 my-2 rounded"
+      class:opacity-50={!tokenInput}
       type="submit"
       on:click={saveToken}>
       Save Token
     </button>
     <button
-      class="bg-red-600 text-white p-2 w-1/4 my-2 rounded"
+      class="bg-warning text-white p-2 w-1/4 my-2 rounded"
+      class:opacity-50={!tokenInput}
       type="clear"
       on:click={clearTokenInput}>
       Clear Token

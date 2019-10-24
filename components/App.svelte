@@ -73,7 +73,7 @@
   });
 </script>
 
-<header class="bg-blue-400 text-white sticky top-0 z-20">
+<header class="bg-brand text-white sticky top-0 z-20">
   <div class="flex items-center p-2">
     <h1 class="text-2xl font-serif ml-2">
       <a href="/" class="hover:text-brand-light">netlify dashboard</a>
