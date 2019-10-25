@@ -1,13 +1,15 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import NetlifyAPI from 'netlify';
+  import axios from 'axios';
 
   import Sites from './Sites.svelte';
   import Form from './Form.svelte';
 
   let sites = [];
-  const netlifyClient = new NetlifyAPI(loadToken());
+  let token = loadToken();
   let updateTimer;
+  let requestsRemaining;
+  let view = 'list';
 
   function loadToken() {
     return localStorage.getItem('netlify-api-key');
@@ -17,7 +19,7 @@
     event.preventDefault();
 
     localStorage.setItem('netlify-api-key', event.detail);
-    netlifyClient.accessToken = loadToken();
+    token = loadToken();
     sites = await fetchSites();
     startUpdateTimer();
   }
@@ -26,7 +28,7 @@
     event.preventDefault();
 
     localStorage.removeItem('netlify-api-key');
-    netlifyClient.accessToken = loadToken();
+    token = loadToken();
     sites = [];
   }
 
@@ -41,9 +43,19 @@
     }, 60 * 1000);
   }
 
+  async function refresh() {
+    clearInterval(updateTimer);
+    sites = await fetchSites();
+    startUpdateTimer();
+  }
+
   async function fetchSites() {
-    let data = await netlifyClient.listSites();
-    data = data.map(site => ({
+    const res = await axios.get('https://api.netlify.com/api/v1/sites', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    requestsRemaining = parseInt(res.headers['x-ratelimit-remaining'], 10);
+    const data = res.data.map(site => ({
+      name: site.name,
       screenshot: site.screenshot_url || generatePlaceholderScreenshot(site),
       url: site.url,
       adminUrl: site.admin_url,
@@ -61,8 +73,12 @@
     return data;
   }
 
+  function switchView() {
+    view = view === 'grid' ? 'list' : 'grid';
+  }
+
   onMount(async () => {
-    if (netlifyClient.accessToken) {
+    if (token) {
       sites = await fetchSites();
       startUpdateTimer();
     }
@@ -80,19 +96,30 @@
     </h1>
     <div class="flex-grow" />
     <div class="flex">
-      {#if netlifyClient.accessToken}
+      {#if requestsRemaining}
+        <span class="p-2 text-brand-light">{requestsRemaining}</span>
+      {/if}
+      {#if token}
         <button class="bg-red-600 text-white p-2 rounded" on:click={clearToken}>
           Clear Token
+        </button>
+        <button class="bg-blue-600 text-white p-2 rounded" on:click={refresh}>
+          Refresh
+        </button>
+        <button
+          class="bg-blue-600 text-white p-2 rounded"
+          on:click={switchView}>
+          Switch View
         </button>
       {/if}
     </div>
   </div>
 </header>
 
-{#if !netlifyClient.accessToken}
+{#if !token}
   <Form on:saveToken={saveToken} />
 {:else if sites.length}
-  <Sites {sites} />
+  <Sites {sites} {view} />
 {:else}
   <div class="flex w-full h-screen justify-center items-center">
     <p class="text-4xl">LOADING DATA</p>
